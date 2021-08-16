@@ -20,7 +20,7 @@ public class DemoAppElements {
             if (length < 0 || length > 10) {
                 System.out.println("Choose a value greater than 1 and less than 10");
             }
-            String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+            String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890~!@#$%^&*()-+=<>,.?/|";
             StringBuilder salt = new StringBuilder();
             Random rnd = new Random();
             while (salt.length() <= length) { // length of the random string.

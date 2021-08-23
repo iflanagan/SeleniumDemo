@@ -1,25 +1,42 @@
 package com.IanFlanagan;
 
+import com.google.common.base.Preconditions;
+import okhttp3.ConnectionPool;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.remote.HttpCommandExecutor;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.remote.http.HttpClient;
+import org.openqa.selenium.remote.internal.OkHttpClient;
 
-import java.util.Random;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
+import java.util.Collections;
+import java.util.Optional;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /*
 
-Ian Flanagan Testim.io 2021
+imfaus 2021
  */
 
 public class SeleniumTest {
+
+    private static final String WEB_DRIVER_URL = "http://localhost:9515";
+    private static final String MABL_CLI_PROXY = "localhost:8889";
 
     private static String baseUrl = "http://www.testim.io";
     public static final String expectedTitle = "Automated Functional Testing - Software Testing Tool - Testim.io";
     public static final int delay = 2000;
     public static boolean result = false;
     public static final String chromeDriverLocation = "/Users/ianflanagan/chromedriver";
-    public static  WebDriver driver = null;
+    //public static WebDriver driver;
+    protected static RemoteWebDriver driver;
+    //protected static RemoteWebDriver driver;
 
     /*
       steps to run locally on workstation
@@ -42,7 +59,9 @@ public class SeleniumTest {
         // System.setProperty("webdriver.chrome.driver","C:\\chromedriver.exe");
         System.setProperty("webdriver.chrome.driver",chromeDriverLocation);
 
-        driver = new ChromeDriver();
+        //driver = new ChromeDriver();
+        driver = createRemoteDriver(WEB_DRIVER_URL, MABL_CLI_PROXY);
+
 
         try {
 
@@ -55,13 +74,13 @@ public class SeleniumTest {
             System.out.println("Can't run login test");
         }
         finally {
-                try {
-                    driver.close();
-                    driver.quit();
+            try {
+                driver.close();
+                driver.quit();
 
-                } catch (Exception ex) {
-                    System.out.println("Cant close the driver." +ex.getMessage());
-                }
+            } catch (Exception ex) {
+                System.out.println("Cant close the driver." +ex.getMessage());
+            }
         }
     }
     public static boolean loginTest(String userName, String password, String expectedloggedInUser) {
@@ -161,4 +180,58 @@ public class SeleniumTest {
         }
     }
 
+    private static RemoteWebDriver createRemoteDriver(final String url, final String proxy) {
+        return createRemoteDriver(url, Optional.ofNullable(proxy));
+    }
+    private static RemoteWebDriver createRemoteDriver(final String url, final Optional<String> proxy) {
+        try {
+            final Capabilities capabilities = new MutableCapabilities();
+            final HttpClient.Factory httpClientFactory = new HttpClientFactory(proxy);
+            final HttpCommandExecutor commandExecutor = new HttpCommandExecutor(Collections.emptyMap(), new URL(url), httpClientFactory);
+            return new RemoteWebDriver(commandExecutor, capabilities);
+        } catch (Exception e) {
+            throw new RuntimeException("Error initializing remote web driver", e);
+        }
+    }
+
+    private static class HttpClientFactory implements HttpClient.Factory {
+        private final ConnectionPool pool = new ConnectionPool();
+        private final Optional<String> proxy;
+
+        public HttpClientFactory(final Optional<String> proxy) {
+            this.proxy = Preconditions.checkNotNull(proxy);
+        }
+
+        @Override
+        public org.openqa.selenium.remote.http.HttpClient.Builder builder() {
+            return new Builder();
+        }
+
+        @Override
+        public void cleanupIdleClients() {
+            pool.evictAll();
+        }
+
+        private class Builder extends HttpClient.Builder {
+            public Builder() {
+                HttpClientFactory.this.proxy.map(value -> value.split(":"))
+                        .map(parts -> InetSocketAddress.createUnresolved(parts[0], Integer.parseInt(parts[1])))
+                        .map(address -> new Proxy(Proxy.Type.HTTP, address))
+                        .ifPresent(this::proxy);
+            }
+            @Override
+            public HttpClient createClient(final URL url) {
+                okhttp3.OkHttpClient.Builder client = new okhttp3.OkHttpClient.Builder()
+                        .connectionPool(pool)
+                        .followRedirects(true)
+                        .followSslRedirects(true)
+                        .readTimeout(readTimeout.toMillis(), MILLISECONDS)
+                        .connectTimeout(connectionTimeout.toMillis(), MILLISECONDS);
+
+                Optional.ofNullable(proxy).ifPresent(client::proxy);
+
+                return new OkHttpClient(client.build(), url);
+            }
+        }
+    }
 }

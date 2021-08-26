@@ -7,7 +7,7 @@ jobs:
     - image: testim/docker-cli
     steps:
       - run: mkdir -p $CIRCLE_TEST_REPORTS/testim/
-      - run: docker exec -u 0 -it my-jenkins-1 bash | echo "72.3.250.251 develop.harborcompliance.com stage.harborcompliance.com qa.harborcompliance.com" >> /etc/hosts
+      - run: docker exec -u 0 -it testim/docker-cli bash | echo "72.3.250.251 develop.harborcompliance.com stage.harborcompliance.com qa.harborcompliance.com" >> /etc/hosts
       - run: testim --token $TestimToken --project $TestimProject --test-plan "harborPOC" --parallel 2 --grid "Testim-Grid" --mode selenium --result-label "HarborPOC" --report-file $CIRCLE_TEST_REPORTS/testim/results.xml
       - store_artifacts:
           path: /tmp/circleci-test-results

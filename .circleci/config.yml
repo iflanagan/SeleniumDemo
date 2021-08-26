@@ -1,0 +1,15 @@
+version: 2
+jobs:
+  build:
+    environment:
+      CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
+    docker:
+    - image: testim/docker-cli
+    steps:
+      - run: mkdir -p $CIRCLE_TEST_REPORTS/testim/
+      - run: --add-host qa.harborcompliance.com:72.3.250.251 -ti testim/docker-cli /bin/bash
+      - run: testim --token "O5Vu1khya5dukXveMDzynhlyyr20wzeKyk2IEhQb9fPHz1xd51" --project $TestimProject --test-plan "harborPOC" --parallel 2 --grid "Testim-Grid" --mode selenium --result-label "HarborPOC" --report-file $CIRCLE_TEST_REPORTS/testim/results.xml
+      - store_artifacts:
+          path: /tmp/circleci-test-results
+      - store_test_results:
+          path: /tmp/circleci-test-results

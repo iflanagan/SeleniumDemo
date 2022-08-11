@@ -9,6 +9,18 @@ import java.util.HashMap;
 /*
 
 imfaus 2021
+
+Steps
+
+Clone this repo
+
+git clone https://github.com/iflanagan/SeleniumDemo.git
+open in intellij
+add the selenium jar to the project library
+download the chrome driver https://chromedriver.chromium.org/downloads
+NOTE: Download the driver for the version of chrome you are running they need
+to be the same!
+
  */
 
 public class LocatorDemo {

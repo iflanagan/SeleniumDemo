@@ -15,6 +15,7 @@ public class DemoAppElements {
         public static final String expectedText = "HELLO, JOHN";
         public static final String expectedTitle = "Automated Functional Testing - Software Testing Tool - Testim.io";
         public static final String testimURL = "https://www.testim.io/";
+        public static final String myUsers [] = {"hailey@testim.io","royal@testim.io","ian@testim.io","roarke@testim.io","nichole@testim.io"};
 
         public static String getSaltString(int length) {
             if (length < 0 || length > 10) {

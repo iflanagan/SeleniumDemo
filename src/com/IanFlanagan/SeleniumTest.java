@@ -3,23 +3,25 @@ package com.IanFlanagan;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
-import java.util.Random;
+import java.util.HashMap;
 
 /*
 
-Ian Flanagan Testim.io 2021
+imfaus 2021
  */
 
 public class SeleniumTest {
 
+    private static final String WEB_DRIVER_URL = "http://localhost:9515";
     private static String baseUrl = "http://www.testim.io";
     public static final String expectedTitle = "Automated Functional Testing - Software Testing Tool - Testim.io";
     public static final int delay = 2000;
     public static boolean result = false;
-    public static final String chromeDriverLocation = "/Users/ianflanagan/chromedriver";
-    public static  WebDriver driver = null;
+    public static final String chromeDriverLocation = "/Users/ianflanagan/ChromeDriver/chromedriver";
+    public static WebDriver driver;
+    //private static RemoteWebDriver driver; /Space /
 
     /*
       steps to run locally on workstation
@@ -44,25 +46,96 @@ public class SeleniumTest {
 
         driver = new ChromeDriver();
 
+        String myhandles[] = driver.getWindowHandles().toArray(new String[0]);
+        System.out.println("My window handles are: " +myhandles);
+
         try {
 
             driver.get(DemoAppElements.testData.testURL);
             sleep(delay);
-            loginTest(DemoAppElements.testData.testUser, DemoAppElements.testData.testPassword,DemoAppElements.testData.expectedText);
+         //   loginTest(DemoAppElements.testData.testUser, DemoAppElements.testData.testPassword,DemoAppElements.testData.expectedText);
             getTitle(DemoAppElements.testData.testimURL, DemoAppElements.testData.expectedTitle);
+
+            String myUsers[] = {"standard_user","performance_glitch_user","problem_user"};
+            HashMap<String, Boolean> results = new HashMap<String, Boolean>();
+
+            for (int i=0; i<= myUsers.length; i++) {
+                boolean result = false;
+                System.out.println("Starting login for user " +myUsers[i]);
+                result = sauceLoginTest(myUsers[i], MyConfig.testpassword, MyConfig.expectedLoginValue);
+                results.put(myUsers[i], result);
+            }
+
+            if (results.containsKey(false)) {
+                System.out.println("Login Test Failed!");
+            } else {
+                System.out.println("Login Test Passed!");
+            }
 
         } catch (Exception e) {
             System.out.println("Can't run login test");
         }
         finally {
-                try {
-                    driver.close();
-                    driver.quit();
+            try {
+                System.out.println("Close browser");
+                driver.close();
+                System.out.println("Quit Driver");
+                driver.quit();
 
-                } catch (Exception ex) {
-                    System.out.println("Cant close the driver." +ex.getMessage());
-                }
+            } catch (Exception ex) {
+                System.out.println("Cant close the driver." +ex.getMessage());
+            }
         }
+    }
+    public static boolean sauceLoginTest(String username, String password, String loggedInuser) {
+
+        boolean isLoggedIn = false;
+        driver.get("https://www.saucedemo.com/");
+        sleep(2000);
+
+        try {
+
+            System.out.println("Starting SauceLoginTest() ");
+
+            System.out.println("Logging in with username: " +username);
+            driver.findElement(By.cssSelector(MyElements.userInputField)).sendKeys(username);
+            sleep(2000);
+
+            System.out.println("Logging in with password: " +password);
+            driver.findElement(By.cssSelector(MyElements.passwordInputField)).sendKeys(password);
+            sleep(2000);
+
+            System.out.println("Click Login Button");
+            driver.findElement(By.cssSelector(MyElements.loginButton)).click();
+            sleep(2000);
+
+            System.out.println("clicking hamburger icon");
+            driver.findElement(By.cssSelector(MyElements.hamburgerButton)).click();
+            sleep(2000);
+
+            System.out.println("Peforming validation");
+            String currentValue = driver.findElement(By.cssSelector(MyElements.logoutButton)).getText();
+            sleep(2000);
+
+            if (currentValue.equals(loggedInuser)) {
+                System.out.println("Login Passed!");
+                sleep(2000);
+                isLoggedIn = true;
+            } else {
+                System.out.println("Login Failed!");
+                sleep(2000);
+            }
+
+        } catch (Exception ex ) {
+            System.out.println("Can't execute sauce Logintest() " + ex.getMessage());
+        } finally {
+
+            System.out.println("Click logout link now");
+            driver.findElement(By.cssSelector(MyElements.logoutButton)).click();
+            sleep(2000);
+        }
+
+        return isLoggedIn;
     }
     public static boolean loginTest(String userName, String password, String expectedloggedInUser) {
 
@@ -83,7 +156,6 @@ public class SeleniumTest {
             System.out.println("Click Login Button");
             driver.findElement(By.cssSelector(DemoAppElements.loginBtn)).click();
             sleep(delay);
-
 
             String loggedInUser = driver.findElement(By.cssSelector(DemoAppElements.signedInusertext)).getText();
             System.out.println("Perform validation we want to make sure that our current loggedInuser: " + loggedInUser + " equals " + expectedloggedInUser);
@@ -160,5 +232,4 @@ public class SeleniumTest {
             System.out.println("Can't run sleep now " +ex.getMessage());
         }
     }
-
 }
